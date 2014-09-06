@@ -1,4 +1,4 @@
-# JavaCSVPreset
+# JavaPreset
 Copyright (C) 2014  Cristiano Costa
 
 This program is free software; you can redistribute it and/or
@@ -15,7 +15,8 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-
 Author: Cristiano Costa
-Package: br.com.bernardescosta.libs.javascvpreset
+
+Package: br.com.bernardescosta.libs.javapreset
+
 Library under GPL v2 license
