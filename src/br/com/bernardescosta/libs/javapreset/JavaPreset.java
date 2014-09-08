@@ -23,12 +23,16 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.text.ParseException;
 import java.util.NoSuchElementException;
 import java.util.Vector;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * JavaCSVPreset
@@ -104,50 +108,92 @@ public class JavaPreset {
 		addToPresets.add(preset);
 		addToPresets.addAll(values);
 		presets.add(addToPresets);
+                
+                output.close();
 	}
+        
+        public void removePreset(String preset) throws FileNotFoundException, IOException {
+            File tempFile = new File(fn + "_tmp");
+            File fp = new File(fn);
+            
+            BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(fp)));
+            BufferedWriter wr = new BufferedWriter(new FileWriter(tempFile));
+            
+            String line = null;
+            int session = 0;
+            while ((line = br.readLine()) != null) {
+                if(line.equals("")) { session++; wr.write("\n"); continue; }
+
+                switch(session) {
+                        case 0: //Header
+                        case 1: //Names & Types
+                            wr.write(line + "\n");
+                            break;
+
+                        case 2: //Presets
+                            if(line.startsWith(preset)) continue;
+                            wr.write(line + "\n");
+                            break;
+                }			
+            }
+            
+            br.close();
+            wr.close();
+            
+            if(!((new File(fn)).delete())) throw new IOException("Can't delete preset file");
+            if(!tempFile.renameTo(new File(fn))) throw new IOException("Can't rename temp file to main file");
+            
+            int preset_pos = -1;
+            for(int i=0; i < presets.size(); i++) {
+                    if(presets.get(i).get(0).equals(preset)) preset_pos = i;
+            }
+            presets.remove(preset_pos);
+        }
 	
 	private void parseFile() throws IOException, ParseException {
-		File f = new File(fn);
-		if(f.exists() && f.isDirectory()) throw new IOException("File is a directory");
-		if(!f.exists()) { 
-			f.createNewFile();
-			BufferedWriter output = new BufferedWriter(new FileWriter(f));
-			output.write("#JAVACSVPRESET#\n\nFild Name\nSecond Field Name\n...\n\n");
-			output.close();
-			
-			throw new ParseException("File isn't created, please fill it with the fields data", 0);
-		}
-		
-		BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(f)));
-		 
-		String line = null;
-		int session = 0;
-		while ((line = br.readLine()) != null) {
-			if(line.equals("")) { session++; continue; }
-			
-			switch(session) {
-				case 0: //Header
-					if(line.equals("#JAVACSVPRESET#\n")) throw new ParseException("File isn't in the JavaCSVPreset format", 0);
-					break;
-				
-				case 1: //Names & Types
-					fieldNames.add(line);
-					fieldLenght++;
-					break;
-					
-				case 2: //Presets
-					String splited[] = line.split("\\|");
-					if(splited.length != fieldNames.size() + 1) throw new ParseException("File isn't in the JavaCSVPreset format. Error in session 2", 2);
-					
-					Vector<String> preset_parse = new Vector<String>();
-					for(int i=0; i < fieldNames.size() + 1; i++)
-						preset_parse.add(splited[i]);
-					
-					presets.add(preset_parse);
-					break;
-			}			
-		}
-		
-		if(session < 2)throw new ParseException("Please fill the CSV with the fields data", 0);
+            File f = new File(fn);
+            if(f.exists() && f.isDirectory()) throw new IOException("File is a directory");
+            if(!f.exists()) { 
+                    f.createNewFile();
+                    BufferedWriter output = new BufferedWriter(new FileWriter(f));
+                    output.write("#JAVACSVPRESET#\n\nFild Name\nSecond Field Name\n...\n\n");
+                    output.close();
+
+                    throw new ParseException("File isn't created, please fill it with the fields data", 0);
+            }
+
+            BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(f)));
+
+            String line = null;
+            int session = 0;
+            while ((line = br.readLine()) != null) {
+                    if(line.equals("")) { session++; continue; }
+
+                    switch(session) {
+                            case 0: //Header
+                                    if(line.equals("#JAVACSVPRESET#\n")) throw new ParseException("File isn't in the JavaCSVPreset format", 0);
+                                    break;
+
+                            case 1: //Names & Types
+                                    fieldNames.add(line);
+                                    fieldLenght++;
+                                    break;
+
+                            case 2: //Presets
+                                    String splited[] = line.split("\\|");
+                                    if(splited.length != fieldNames.size() + 1) throw new ParseException("File isn't in the JavaCSVPreset format. Error in session 2", 2);
+
+                                    Vector<String> preset_parse = new Vector<String>();
+                                    for(int i=0; i < fieldNames.size() + 1; i++)
+                                            preset_parse.add(splited[i]);
+
+                                    presets.add(preset_parse);
+                                    break;
+                    }			
+            }
+
+            if(session < 1)throw new ParseException("Please fill the CSV with the fields data", 0);
+
+            br.close();
 	}
 }
